@@ -31,6 +31,8 @@
 *.out
 *.app
 
-# Logs
+# Data
+data/*
 
+# Logs
 compilation.log
