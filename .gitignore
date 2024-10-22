@@ -36,3 +36,6 @@ data/*
 
 # Logs
 compilation.log
+
+# Visual Studio Code
+.vscode/*

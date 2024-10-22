@@ -2,7 +2,6 @@
 #include <iostream>
 #include <random>
 #include <string>
-#include <sstream>
 
 int main()
 {
@@ -16,7 +15,8 @@ int main()
     
     std::string filename = "data/samples/" + std::to_string(k) + "_normal_distribution_samples.data";
     std::ofstream file(filename);
-    for(int i = 0; i < k - 1; i++){
+    for(int i = 0; i < k - 1; i++)
+    {
         file << normal_distribution(generator) << std::endl;
     }
     file << normal_distribution(generator);
