@@ -33,7 +33,7 @@ int main()
                            mab, 
                            normal_distribution, 
                            generator);
-    for (int t = 0; t < T; t++)
+    for (int num = 0; num < n; num++)
     {
         egr.episode();
         for (int i = 0; i < k; i++)

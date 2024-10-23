@@ -2,6 +2,7 @@
 #include "multi_armed_bandits.h"
 
 #include <fstream>
+#include <iostream>
 #include <string>
 
 // Constructor
@@ -44,7 +45,7 @@ void epsilon_greedy_run::step()
 {
     if (epsilon_distribution(*generator))
     {
-        std::discrete_distribution<int> dd (values.begin(), values.end());
+        std::uniform_int_distribution<> dd(0, k - 1);
         choice = dd(*generator);
     }
     else
