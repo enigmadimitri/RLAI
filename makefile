@@ -2,6 +2,9 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -I./include -Wall -Wextra -Werror
 
+# Data
+DATA_FOLDER = data
+
 # Executables
 MAIN_EXECUTABLE = build\main.exe
 EXAMPLE_EXECUTABLE = build\generate_k_normal_distribution_samples.exe
@@ -20,5 +23,6 @@ $(EXAMPLE_EXECUTABLE): examples/*.cc
 # Rule to clean up generated files
 clean:
 	del $(MAIN_EXECUTABLE) $(EXAMPLE_EXECUTABLE)
+	del /F /S $(DATA_FOLDER)\*
 
 .PHONY: all clean

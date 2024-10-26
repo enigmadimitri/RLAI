@@ -1,12 +1,12 @@
-#ifndef EPSILON_GREEDY_RUN_H
-#define EPSILON_GREEDY_RUN_H
+#ifndef RUN_H
+#define RUN_H
 
 #include "multi_armed_bandits.h"
 #include "utilities.h"
 
 #include <random>
 
-class epsilon_greedy_run
+class run
 {
   private:
     int choice;
@@ -16,7 +16,9 @@ class epsilon_greedy_run
     int percentage_correct;
     int t;
     int T;
+    double alpha;
     double epsilon;
+    double initial_value;
     double reward;
     std::bernoulli_distribution epsilon_distribution;
     std::vector<int> plays;
@@ -29,9 +31,11 @@ class epsilon_greedy_run
 
   public:
     // Constructor
-    epsilon_greedy_run(int, int, double, const multi_armed_bandits&, std::normal_distribution<double>*, std::mt19937*);
-    // Playing one step
-    void step();
+    run(int, int, double, double, double, const multi_armed_bandits&, std::normal_distribution<double>*, std::mt19937*);
+    // Playing one alpha step
+    void step_alpha();
+    // Playing one classic step
+    void step_classic();
     // Playing one episode
     void episode();
     // Resetting current episode
