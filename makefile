@@ -23,6 +23,6 @@ $(EXAMPLE_EXECUTABLE): examples/*.cc
 # Rule to clean up generated files
 clean:
 	del $(MAIN_EXECUTABLE) $(EXAMPLE_EXECUTABLE)
-	del /F /S $(DATA_FOLDER)\*
+	del /F /Q /S $(DATA_FOLDER)\*
 
 .PHONY: all clean
