@@ -10,6 +10,7 @@ class run
 {
   private:
     bool baseline;
+    bool random_walk;
     int choice;
     int current;
     int k;
@@ -38,9 +39,11 @@ class run
 
   public:
     // Constructor
-    run(bool, int, int, double, double, double, double, double, const multi_armed_bandits&, std::normal_distribution<double>*, std::mt19937*);
+    run(bool, bool, int, int, double, double, double, double, double, const multi_armed_bandits&, std::normal_distribution<double>*, std::mt19937*);
     // Returning super reward average
-    double super_reward_average();
+    double super_reward_average(int);
+    // Altering means
+    void alterate();
     // Playing one alpha step
     void step_alpha();
     // Playing one classic step

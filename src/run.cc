@@ -8,6 +8,7 @@
 // Constructor
 
 run::run(bool vbaseline,
+         bool vrandom_walk,
          int vn, 
          int vT, 
          double valpha,
@@ -20,6 +21,7 @@ run::run(bool vbaseline,
          std::mt19937* vgenerator) 
          : 
          baseline(vbaseline),
+         random_walk(vrandom_walk),
          current(0),
          n(vn), 
          t(0), 
@@ -55,14 +57,26 @@ run::run(bool vbaseline,
 
 // Returning super reward average
 
-double run::super_reward_average()
+double run::super_reward_average(int t_initial)
 {
     double result = 0;
-    for (int i = 0; i < T; i++)
+    for (int i = t_initial; i < T; i++)
     {
         result += average_reward.at(i);
     }
-    return result/T;
+    return result / (T - t_initial);
+}
+
+// Altering means
+
+void run::alterate()
+{
+    std::vector<double> add_means;
+    for (int i = 0; i < k; i++)
+    {
+        add_means.push_back(0.01 * (*normal_distribution)(*generator));
+    }
+    mab.add_means(add_means);
 }
 
 // Playing one alpha step
@@ -207,30 +221,74 @@ void run::episode()
 {
     if (c > 0)
     {
-        for (int i = 0; i < T; i++)
+        if (random_walk)
         {
-            step_ucb();
+            for (int i = 0; i < T; i++)
+            {
+                step_ucb();
+                alterate();
+            }
+        }
+        else
+        {
+            for (int i = 0; i < T; i++)
+            {
+                step_ucb();
+            }
         }
     }
     else if (alpha > 0)
     {
-        for (int i = 0; i < T; i++)
+        if (random_walk)
         {
-            step_alpha();
-        }       
+            for (int i = 0; i < T; i++)
+            {
+                step_alpha();
+                alterate();
+            }
+        }
+        else
+        {
+            for (int i = 0; i < T; i++)
+            {
+                step_alpha();
+            }
+        }    
     }
     else if (alpha_gradient_bandit > 0)
     {
-        for (int i = 0; i < T; i++)
+        if (random_walk)
         {
-            step_gradient_bandit();
-        }       
+            for (int i = 0; i < T; i++)
+            {
+                step_gradient_bandit();
+                alterate();
+            }
+        }
+        else
+        {
+            for (int i = 0; i < T; i++)
+            {
+                step_gradient_bandit();
+            }
+        }      
     }    
     else
     {
-        for (int i = 0; i < T; i++)
+        if (random_walk)
         {
-            step_classic();
+            for (int i = 0; i < T; i++)
+            {
+                step_classic();
+                alterate();
+            }
+        }
+        else
+        {
+            for (int i = 0; i < T; i++)
+            {
+                step_classic();
+            }
         }       
     }
 }
