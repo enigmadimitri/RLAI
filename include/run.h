@@ -17,12 +17,14 @@ class run
     int t;
     int T;
     double alpha;
+    double c;
     double epsilon;
     double initial_value;
     double reward;
     std::bernoulli_distribution epsilon_distribution;
     std::vector<int> plays;
     std::vector<double> values;
+    std::vector<double> values_ucb;
     std::vector<double> average_reward;
     std::vector<double> percentage_optimal_action;
     multi_armed_bandits mab;
@@ -31,11 +33,13 @@ class run
 
   public:
     // Constructor
-    run(int, int, double, double, double, const multi_armed_bandits&, std::normal_distribution<double>*, std::mt19937*);
+    run(int, int, double, double, double, double, const multi_armed_bandits&, std::normal_distribution<double>*, std::mt19937*);
     // Playing one alpha step
     void step_alpha();
     // Playing one classic step
     void step_classic();
+    // Playing one ucb step
+    void step_ucb();
     // Playing one episode
     void episode();
     // Resetting current episode

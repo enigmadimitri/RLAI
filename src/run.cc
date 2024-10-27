@@ -10,6 +10,7 @@
 run::run(int vn, 
                                        int vT, 
                                        double valpha,
+                                       double vc,
                                        double vepsilon, 
                                        double vinitial_value,
                                        const multi_armed_bandits& vmab, 
@@ -21,6 +22,7 @@ run::run(int vn,
                                        t(0), 
                                        T(vT), 
                                        alpha(valpha),
+                                       c(vc),
                                        epsilon(vepsilon), 
                                        initial_value(vinitial_value),
                                        mab(vmab), 
@@ -34,6 +36,7 @@ run::run(int vn,
     {
         plays.push_back(0);
         values.push_back(initial_value);
+        values_ucb.push_back(0);
     }
     for (int i = 0; i < T; i++)
     {
@@ -68,6 +71,43 @@ void run::step_alpha()
     t++;
 }
 
+// Playing one ucb step
+
+void run::step_ucb()
+{
+    if (t < k)
+    {   
+        std::vector<int> unplayed;
+        for (int i = 0; i < k; i++)
+        {
+            if (plays.at(i) == 0)
+            {
+                unplayed.push_back(i);
+            }
+        }
+        std::discrete_distribution<int> dd (unplayed.begin(), unplayed.end());
+        choice = unplayed.at(dd(*generator));
+    }
+    else
+    {
+        std::vector<int> choices;
+        for (int i = 0; i < k; i++)
+        {
+            values_ucb.at(i) = values.at(i) + c * sqrt(log(t) / plays.at(i));
+        }
+        choices = argmax(values_ucb);
+        std::discrete_distribution<int> dd (choices.begin(), choices.end());
+        choice = choices.at(dd(*generator));
+    }
+    percentage_correct = 100 * (mab.get_mean(choice) == max(mab.get_means()));
+    plays.at(choice) += 1;
+    reward = mab.get_mean(choice) + mab.get_standard_deviation(choice) * (*normal_distribution)(*generator);
+    values.at(choice) = (values.at(choice) * (plays.at(choice) - 1) + reward) / plays.at(choice);
+    average_reward.at(t) = (average_reward.at(t) * current + reward) / (current + 1);
+    percentage_optimal_action.at(t) = (percentage_optimal_action.at(t) * current + percentage_correct) / (current + 1);
+    t++;
+}
+
 // Playing one classic step
 
 void run::step_classic()
@@ -97,16 +137,26 @@ void run::step_classic()
 
 void run::episode()
 {
-    for (int i = 0; i < T; i++)
+    if (c > 0)
     {
-        if (alpha == 0)
+        for (int i = 0; i < T; i++)
         {
-            step_classic();
+            step_ucb();
         }
-        else
+    }
+    else if (alpha > 0)
+    {
+        for (int i = 0; i < T; i++)
         {
             step_alpha();
-        }
+        }       
+    }
+    else
+    {
+        for (int i = 0; i < T; i++)
+        {
+            step_classic();
+        }       
     }
 }
 
@@ -129,6 +179,7 @@ void run::reset(const multi_armed_bandits& vmab)
 void run::write()
 {
     std::string avg_filename = "data/avg_reward_" + std::to_string(alpha) + "_"
+                                                  + std::to_string(c) + "_"
                                                   + std::to_string(epsilon) + "_"
                                                   + std::to_string(initial_value) + "_run.data";
     std::ofstream avg_file(avg_filename);

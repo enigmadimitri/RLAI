@@ -13,6 +13,7 @@ int main()
     int n;
     int T;
     double alpha;
+    double c;
     double epsilon;
     double initial_value;
     std::cout << "Value for k?" << std::endl;
@@ -23,6 +24,8 @@ int main()
     std::cin >> T;
     std::cout << "Value for alpha?" << std::endl;
     std::cin >> alpha;
+    std::cout << "Value for c?" << std::endl;
+    std::cin >> c;
     std::cout << "Value for epsilon?" << std::endl;
     std::cin >> epsilon;
     std::cout << "Value for initial value?" << std::endl;
@@ -36,6 +39,7 @@ int main()
     run r(n, 
           T, 
           alpha,
+          c,
           epsilon, 
           initial_value,
           mab, 
