@@ -7,27 +7,32 @@
 
 // Constructor
 
-run::run(int vn, 
-                                       int vT, 
-                                       double valpha,
-                                       double vc,
-                                       double vepsilon, 
-                                       double vinitial_value,
-                                       const multi_armed_bandits& vmab, 
-                                       std::normal_distribution<double>* vnormal_distribution, 
-                                       std::mt19937* vgenerator) 
-                                       : 
-                                       current(0),
-                                       n(vn), 
-                                       t(0), 
-                                       T(vT), 
-                                       alpha(valpha),
-                                       c(vc),
-                                       epsilon(vepsilon), 
-                                       initial_value(vinitial_value),
-                                       mab(vmab), 
-                                       normal_distribution(vnormal_distribution), 
-                                       generator(vgenerator)
+run::run(bool vbaseline,
+         int vn, 
+         int vT, 
+         double valpha,
+         double valpha_gradient_bandit,
+         double vc,
+         double vepsilon, 
+         double vinitial_value,
+         const multi_armed_bandits& vmab, 
+         std::normal_distribution<double>* vnormal_distribution, 
+         std::mt19937* vgenerator) 
+         : 
+         baseline(vbaseline),
+         current(0),
+         n(vn), 
+         t(0), 
+         T(vT), 
+         alpha(valpha),
+         alpha_gradient_bandit(valpha_gradient_bandit),
+         c(vc),
+         epsilon(vepsilon), 
+         initial_value(vinitial_value),
+         reward_mean(0),
+         mab(vmab), 
+         normal_distribution(vnormal_distribution), 
+         generator(vgenerator)
 {   
     k = mab.get_k();
     std::bernoulli_distribution bd(epsilon);
@@ -37,6 +42,8 @@ run::run(int vn,
         plays.push_back(0);
         values.push_back(initial_value);
         values_ucb.push_back(0);
+        preferences.push_back(0);
+        probabilities.push_back(0);
     }
     for (int i = 0; i < T; i++)
     {
@@ -44,6 +51,18 @@ run::run(int vn,
         percentage_optimal_action.push_back(0);
     }
 
+}
+
+// Returning super reward average
+
+double run::super_reward_average()
+{
+    double result = 0;
+    for (int i = 0; i < T; i++)
+    {
+        result += average_reward.at(i);
+    }
+    return result/T;
 }
 
 // Playing one alpha step
@@ -59,13 +78,87 @@ void run::step_alpha()
     {
         std::vector<int> choices;
         choices = argmax(values);
-        std::discrete_distribution<int> dd (choices.begin(), choices.end());
+        std::uniform_int_distribution<int> dd (0, choices.size() - 1);
         choice = choices.at(dd(*generator));
     }
     percentage_correct = 100 * (mab.get_mean(choice) == max(mab.get_means()));
     plays.at(choice) += 1;
     reward = mab.get_mean(choice) + mab.get_standard_deviation(choice) * (*normal_distribution)(*generator);
     values.at(choice) = values.at(choice) * (1 - alpha) + alpha * reward;
+    average_reward.at(t) = (average_reward.at(t) * current + reward) / (current + 1);
+    percentage_optimal_action.at(t) = (percentage_optimal_action.at(t) * current + percentage_correct) / (current + 1);
+    t++;
+}
+
+// Playing one classic step
+
+void run::step_classic()
+{
+    if (epsilon_distribution(*generator))
+    {
+        std::uniform_int_distribution<> dd(0, k - 1);
+        choice = dd(*generator);
+    }
+    else
+    {
+        std::vector<int> choices;
+        choices = argmax(values);
+        std::uniform_int_distribution<int> dd (0, choices.size() - 1);
+        choice = choices.at(dd(*generator));
+    }
+    percentage_correct = 100 * (mab.get_mean(choice) == max(mab.get_means()));
+    plays.at(choice) += 1;
+    reward = mab.get_mean(choice) + mab.get_standard_deviation(choice) * (*normal_distribution)(*generator);
+    values.at(choice) = (values.at(choice) * (plays.at(choice) - 1) + reward) / plays.at(choice);
+    average_reward.at(t) = (average_reward.at(t) * current + reward) / (current + 1);
+    percentage_optimal_action.at(t) = (percentage_optimal_action.at(t) * current + percentage_correct) / (current + 1);
+    t++;
+}
+
+// Playing one gradient bandit step
+
+void run::step_gradient_bandit()
+{
+    double probability_norm = 0;
+    for (int i = 0; i < k; i++)
+    {
+        probability_norm += exp(preferences.at(i));
+    }
+    for (int i = 0; i < k; i++)
+    {
+        probabilities.at(i) = exp(preferences.at(i)) / probability_norm;
+    }
+    std::discrete_distribution<int> dd (probabilities.begin(), probabilities.end());
+    choice = dd(*generator);
+    reward = mab.get_mean(choice) + mab.get_standard_deviation(choice) * (*normal_distribution)(*generator);
+    reward_mean = (reward_mean * t + reward) / (t + 1);
+    for (int i = 0; i < k; i++)
+    {
+        if (baseline)
+        {
+            if (i == choice)
+            {
+                preferences.at(i) += alpha_gradient_bandit * (reward - reward_mean) * (1 - probabilities.at(i));
+            }
+            else
+            {
+                preferences.at(i) -= alpha_gradient_bandit * (reward - reward_mean) * probabilities.at(i);
+            }
+        }
+        else
+        {
+            if (i == choice)
+            {
+                preferences.at(i) += alpha_gradient_bandit * reward * (1 - probabilities.at(i));
+            }
+            else
+            {
+                preferences.at(i) -= alpha_gradient_bandit * reward * probabilities.at(i);
+            }            
+        }
+    }
+    percentage_correct = 100 * (mab.get_mean(choice) == max(mab.get_means()));
+    plays.at(choice) += 1;
     average_reward.at(t) = (average_reward.at(t) * current + reward) / (current + 1);
     percentage_optimal_action.at(t) = (percentage_optimal_action.at(t) * current + percentage_correct) / (current + 1);
     t++;
@@ -85,7 +178,7 @@ void run::step_ucb()
                 unplayed.push_back(i);
             }
         }
-        std::discrete_distribution<int> dd (unplayed.begin(), unplayed.end());
+        std::uniform_int_distribution<int> dd (0, unplayed.size() - 1);
         choice = unplayed.at(dd(*generator));
     }
     else
@@ -96,32 +189,7 @@ void run::step_ucb()
             values_ucb.at(i) = values.at(i) + c * sqrt(log(t) / plays.at(i));
         }
         choices = argmax(values_ucb);
-        std::discrete_distribution<int> dd (choices.begin(), choices.end());
-        choice = choices.at(dd(*generator));
-    }
-    percentage_correct = 100 * (mab.get_mean(choice) == max(mab.get_means()));
-    plays.at(choice) += 1;
-    reward = mab.get_mean(choice) + mab.get_standard_deviation(choice) * (*normal_distribution)(*generator);
-    values.at(choice) = (values.at(choice) * (plays.at(choice) - 1) + reward) / plays.at(choice);
-    average_reward.at(t) = (average_reward.at(t) * current + reward) / (current + 1);
-    percentage_optimal_action.at(t) = (percentage_optimal_action.at(t) * current + percentage_correct) / (current + 1);
-    t++;
-}
-
-// Playing one classic step
-
-void run::step_classic()
-{
-    if (epsilon_distribution(*generator))
-    {
-        std::uniform_int_distribution<> dd(0, k - 1);
-        choice = dd(*generator);
-    }
-    else
-    {
-        std::vector<int> choices;
-        choices = argmax(values);
-        std::discrete_distribution<int> dd (choices.begin(), choices.end());
+        std::uniform_int_distribution<int> dd (0, choices.size() - 1);
         choice = choices.at(dd(*generator));
     }
     percentage_correct = 100 * (mab.get_mean(choice) == max(mab.get_means()));
@@ -151,6 +219,13 @@ void run::episode()
             step_alpha();
         }       
     }
+    else if (alpha_gradient_bandit > 0)
+    {
+        for (int i = 0; i < T; i++)
+        {
+            step_gradient_bandit();
+        }       
+    }    
     else
     {
         for (int i = 0; i < T; i++)
@@ -168,8 +243,11 @@ void run::reset(const multi_armed_bandits& vmab)
     t = 0;
     for (int i = 0; i < k; i++)
     {
+        reward_mean = 0;
         plays.at(i) = 0;
         values.at(i) = initial_value;
+        preferences.at(i) = 0;
+        probabilities.at(i) = 0;
     }
     mab = vmab;
 }
@@ -179,6 +257,8 @@ void run::reset(const multi_armed_bandits& vmab)
 void run::write()
 {
     std::string avg_filename = "data/avg_reward_" + std::to_string(alpha) + "_"
+                                                  + std::to_string(alpha_gradient_bandit) + "_"
+                                                  + std::to_string(baseline) + "_"
                                                   + std::to_string(c) + "_"
                                                   + std::to_string(epsilon) + "_"
                                                   + std::to_string(initial_value) + "_run.data";
@@ -192,6 +272,9 @@ void run::write()
     avg_file.close();
 
     std::string pct_filename = "data/pct_optimal_action_" + std::to_string(alpha) + "_"
+                                                          + std::to_string(alpha_gradient_bandit) + "_"
+                                                          + std::to_string(baseline) + "_"
+                                                          + std::to_string(c) + "_"
                                                           + std::to_string(epsilon) + "_"
                                                           + std::to_string(initial_value) + "_run.data";
     std::ofstream pct_file(pct_filename);
