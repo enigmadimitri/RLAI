@@ -32,10 +32,10 @@
 *.app
 
 # Data
-data/*
+*/data/*
 
 # Logs
-compilation.log
+*/compilation.log
 
 # Visual Studio Code
 .vscode/*

@@ -54,11 +54,11 @@ int main()
             std::vector<double> means;
             for (int i = 0; i < k; i++)
             {
-                means.push_back(normal_mean + (*normal_distribution)(*generator));
+                means.push_back(normal_mean);
             }
             multi_armed_bandits mab(means);
             run r(baseline,
-                  false,
+                  true,
                   n, 
                   T, 
                   alpha,
@@ -74,7 +74,7 @@ int main()
                 r.episode();
                 for (int i = 0; i < k; i++)
                 {
-                    means.at(i) = normal_mean + (*normal_distribution)(*generator);
+                    means.at(i) = normal_mean;
                 }
                 mab.new_means(means);
                 r.reset(mab);
@@ -92,11 +92,11 @@ int main()
             std::vector<double> means;
             for (int i = 0; i < k; i++)
             {
-                means.push_back(normal_mean + (*normal_distribution)(*generator));
+                means.push_back(normal_mean);
             }
             multi_armed_bandits mab(means);
             run r(baseline,
-                  false,
+                  true,
                   n, 
                   T, 
                   0.1,
@@ -112,7 +112,7 @@ int main()
                 r.episode();
                 for (int i = 0; i < k; i++)
                 {
-                    means.at(i) = normal_mean + (*normal_distribution)(*generator);
+                    means.at(i) = normal_mean;
                 }
                 mab.new_means(means);
                 r.reset(mab);
@@ -130,11 +130,11 @@ int main()
             std::vector<double> means;
             for (int i = 0; i < k; i++)
             {
-                means.push_back(normal_mean + (*normal_distribution)(*generator));
+                means.push_back(normal_mean);
             }
             multi_armed_bandits mab(means);
             run r(baseline,
-                  false,
+                  true,
                   n, 
                   T, 
                   alpha,
@@ -150,7 +150,7 @@ int main()
                 r.episode();
                 for (int i = 0; i < k; i++)
                 {
-                    means.at(i) = normal_mean + (*normal_distribution)(*generator);
+                    means.at(i) = normal_mean;
                 }
                 mab.new_means(means);
                 r.reset(mab);
@@ -175,11 +175,11 @@ int main()
             std::vector<double> means;
             for (int i = 0; i < k; i++)
             {
-                means.push_back(normal_mean + (*normal_distribution)(*generator));
+                means.push_back(normal_mean);
             }
             multi_armed_bandits mab(means);
             run r(baseline,
-                  false,
+                  true,
                   n, 
                   T, 
                   alpha,
@@ -195,7 +195,7 @@ int main()
                 r.episode();
                 for (int i = 0; i < k; i++)
                 {
-                    means.at(i) = normal_mean + (*normal_distribution)(*generator);
+                    means.at(i) = normal_mean;
                 }
                 mab.new_means(means);
                 r.reset(mab);
@@ -213,11 +213,11 @@ int main()
             std::vector<double> means;
             for (int i = 0; i < k; i++)
             {
-                means.push_back(normal_mean + (*normal_distribution)(*generator));
+                means.push_back(normal_mean);
             }
             multi_armed_bandits mab(means);
             run r(baseline,
-                  false,
+                  true,
                   n, 
                   T, 
                   0.1,
@@ -233,7 +233,7 @@ int main()
                 r.episode();
                 for (int i = 0; i < k; i++)
                 {
-                    means.at(i) = normal_mean + (*normal_distribution)(*generator);
+                    means.at(i) = normal_mean;
                 }
                 mab.new_means(means);
                 r.reset(mab);
